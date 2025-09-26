@@ -1,4 +1,4 @@
-DROP DATABASE IF EXISTS `Pharmacy_Database`;
+
 CREATE DATABASE `Pharmacy_Database`;
 USE `Pharmacy_Database`;
 
