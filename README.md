@@ -37,7 +37,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:@127.0.0.1:3306/ph
 
 Running the Application
 From the project directory, run:
-python app.py
+python connect.py
 
 
 Then open a browser and visit:
