@@ -1,3 +1,5 @@
+https://github.com/KualaBear/PharmaFulfill
+
 After following the install instructions in the python code comments and changed the necessary parts in the app.config to connect to your mysql database. 
 
 Run the command: flask --app connect  run
