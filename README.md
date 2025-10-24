@@ -1,10 +1,10 @@
-PharmaFulfill — Pharmacy Database Management System
+# PharmaFulfill — Pharmacy Database Management System
 
 A Flask and MySQL web application designed to manage pharmacy operations efficiently.
 This system allows patients to activate accounts, log in, and view dashboards,
 and enables staff (technicians, pharmacists, admins) to log in securely and access internal tools.
 
-Requirements
+# Requirements
 Python 3.10 or newer
 MySQL Server (Workbench recommended)
 Required Python libraries:
