@@ -16,7 +16,7 @@ Open MySQL Workbench and create a database:
 CREATE DATABASE pharmacy_database;
 USE pharmacy_database;
 
-Run the provided schema file (for example, pharmacy_schema.sql) to create all tables.
+Run the provided schema file (for example, Updated_MySql_Template.sql) to create all tables.
 Verify that your database includes the following tables:
 Patient
 Insurance
@@ -29,7 +29,7 @@ Fill
 Billing
 
 ## Configuration
-In your app.py, update this line to match your MySQL credentials:
+In your connect.py, update this line to match your MySQL credentials:
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:YOUR_PASSWORD@127.0.0.1:3306/pharmacy_database'
 
 If your MySQL root user has no password, use:
