@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Code Verification</title>
+</head>
+<body>
+  <h3>Enter Verification Code</h3>
+  <form method="POST" action="{{ url_for('submit_code') }}">
+    <input type="hidden" name="patient" value="{{ patient }}">
+    <input type="hidden" name="action" value="{{ action }}">
+    <input type="password" name="code" placeholder="Enter code">
+    <button type="submit">Submit</button>
+  </form>
+</body>
+</html>

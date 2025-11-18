@@ -22,6 +22,13 @@
       + Add Prescription
     </a>
   </div>
+  {% if role == 'Admin' %}
+  <div class="mb-3">
+    <a href="{{ url_for('add_medication') }}" class="btn btn-secondary">
+      + Add Medication
+    </a>
+  </div>
+  {% endif %}
   <div class="card">
     <div class="card-header">Pending Prescriptions</div>
     <div class="card-body p-0">
@@ -39,8 +46,21 @@
             <td>{{ rx.DrugID }}</td>
             <td><span class="badge bg-warning text-dark">{{ rx.Status }}</span></td>
             <td>
-              <button class="btn btn-sm btn-success">Verify</button>
-              <button class="btn btn-sm btn-info">Mark Ready</button>
+              <!-- Verify form -->
+              <form method="POST" action="{{ url_for('handle_action') }}" class="d-inline">
+                <input type="hidden" name="rxid" value="{{ rx.RxID }}">
+                <input type="hidden" name="patient" value="{{ rx.PatientID }}">
+                <input type="hidden" name="action" value="verify">
+                <button type="submit" class="btn btn-sm btn-success">Verify</button>
+              </form>
+
+              <!-- Mark Ready form -->
+              <form method="POST" action="{{ url_for('handle_action') }}" class="d-inline">
+                <input type="hidden" name="rxid" value="{{ rx.RxID }}">
+                <input type="hidden" name="patient" value="{{ rx.PatientID }}">
+                <input type="hidden" name="action" value="ready">
+                <button type="submit" class="btn btn-sm btn-info">Mark Ready</button>
+              </form>
             </td>
           </tr>
           {% endfor %}

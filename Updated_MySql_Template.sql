@@ -1,4 +1,4 @@
-Create Pharmacy_Database
+Create database Pharmacy_Database
 use Pharmacy_Database;
 
 CREATE TABLE Insurance (
@@ -112,5 +112,6 @@ VALUES ('Dr. Smith', 'LIC123456', 'Cardiology');
 INSERT INTO Drug (NDC, Name, Strength, Form)
 VALUES ('123456789012', 'Atorvastatin', '10mg', 'Tablet');
 
-
+ALTER TABLE Prescription
+ADD Instructions VARCHAR(256) NOT NULL;
 
