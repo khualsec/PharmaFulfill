@@ -1,4 +1,4 @@
-Create Pharmacy_Database
+Create DATABASE Pharmacy_Database;
 use Pharmacy_Database;
 
 CREATE TABLE Insurance (
