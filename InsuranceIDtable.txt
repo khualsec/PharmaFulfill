@@ -1,0 +1,8 @@
+# InsuranceID, Provider, Plan, Deductible, Notes
+'1235', 'Blue Cross Blue Shield', 'Premium Plan', '1500.00', 'Full coverage plan'
+'1236', 'United Healthcare', 'Standard Plan', '2000.00', 'Standard coverage'
+'1237', 'Aetna', 'Standard Plan', '2000.00', 'Seeded from UI dropdown'
+'1238', 'Medicare', 'Part A & B', '0.00', 'Government Medicare.'
+'1239', 'Medicaid', 'Government Plan', '0.00', 'Medicaid coverage'
+'1240', 'Cash/No Insurance', 'Cash Pay', '0.00', 'Self-pay / no insurance'
+'1241', 'Blue Cross Blue Shield', 'Silver PPO', '500.00', 'Mid-level coverage.'
