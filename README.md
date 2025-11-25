@@ -49,15 +49,15 @@ It is built with:
 Run Flask API:
    ```bash
   python connect.py
-  if sucessful, you should see:
-  Running on http://127.0.0.1:5000
+
+If sucessful, you should see:
+Running on http://127.0.0.1:5000
 
 Open new terminal:
-    
    ```bash
    npm install
    npm run dev
 
-   You should then see a URL like:
-   http://localhost:5173
+You should then see a URL like:
+http://localhost:5173
 
