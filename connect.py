@@ -836,7 +836,7 @@ def admin_change_user_password(user_id):
 
 
 @app.route("/api/users/<int:user_id>", methods=["DELETE"])
-def delete_user():
+def delete_user(user_id):
     """
     Admin delete for Patient or Staff.
     JSON body:
