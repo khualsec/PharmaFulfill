@@ -44,22 +44,20 @@ It is built with:
 5. Installing dependencies from your project folder terminal:
 
    ```bash
-   pip install flask flask-cors flask-sqlalchemy pymysql bcrypt python-dotenv reportlab
+   pip install flask flask-cors flask-sqlalchemy pymysql bcrypt python-dotenv reportlab cryptography
 
 6. Run Flask API:
-   
    ```bash
   python connect.py
 
-6.1 If sucessful, you should see:
+If sucessful, you should see:
     - Running on http://127.0.0.1:5000
 
-6.2 Open new terminal:
+Open new terminal:
    ```bash
    npm install
-   ```bash
    npm run dev
 
-6.3 You should then see a URL like:
-   - http://localhost:5173
+You should then see a URL like:
+http://localhost:5173
 
