@@ -54,11 +54,7 @@ CORS(app, supports_credentials=True, origins=[
 # Secret key for tokens, etc.
 app.secret_key = secrets.token_hex(16)
 
-# DATABASE CONFIGURATION
-
-# root should stay the same but password should be your password for your server 
-# host is the host name of your server that you can find on mysql workbench when you go to server status it should show the host just copy and paste
-# And then database is the name of the database in your mysql which would be pharmafulfill_database or you can change it to whatever you named it
+# DATABASE CONFIG (LOCAL MYSQL WORKBENCH)
 app.config["SQLALCHEMY_DATABASE_URI"] = (
     "mysql+pymysql://root:yourpassword@localhost/pharmafulfill_database"
 )
@@ -797,7 +793,7 @@ def update_user(user_id):
 
 
 @app.route("/api/users/<int:user_id>/password", methods=["PUT"])
-def admin_change_user_password():
+def admin_change_user_password(user_id):
     """
     Admin-only password reset for Patient or Staff.
     JSON:
