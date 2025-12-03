@@ -1,3 +1,4 @@
+DROP DATABASE IF EXISTS pharmafulfill_database;
 CREATE DATABASE pharmafulfill_database;
 USE pharmafulfill_database;
 
@@ -10,7 +11,7 @@ CREATE TABLE Insurance (
   Notes       VARCHAR(255)
 );
 
--- 2) PATIENT (email-only login; password can be NULL for seeded records)
+-- 2) PATIENT
 CREATE TABLE Patient (
   PatientID   INT PRIMARY KEY AUTO_INCREMENT,
   FirstName   VARCHAR(50) NOT NULL,
@@ -81,19 +82,19 @@ CREATE TABLE Prescription (
   FOREIGN KEY (DrugID)       REFERENCES Drug(DrugID)
 );
 
--- 8) REFILL REQUEST (for "Request Refill" feature)
+-- 8) REFILL REQUEST
 CREATE TABLE RefillRequest (
-  RequestID  INT PRIMARY KEY AUTO_INCREMENT,
-  RxID       INT NOT NULL,
-  PatientID  INT NOT NULL,
+  RequestID   INT PRIMARY KEY AUTO_INCREMENT,
+  RxID        INT NOT NULL,
+  PatientID   INT NOT NULL,
   RequestedOn DATETIME DEFAULT NOW(),
-  Status     ENUM('Pending','Approved','Denied') DEFAULT 'Pending',
-  Notes      VARCHAR(255),
+  Status      ENUM('Pending','Approved','Denied') DEFAULT 'Pending',
+  Notes       VARCHAR(255),
   FOREIGN KEY (RxID)      REFERENCES Prescription(RxID),
   FOREIGN KEY (PatientID) REFERENCES Patient(PatientID)
 );
 
--- 9) FILL (pharmacist workflow)
+-- 9) FILL
 CREATE TABLE Fill (
   FillID       INT PRIMARY KEY AUTO_INCREMENT,
   RxID         INT NOT NULL,
@@ -101,7 +102,7 @@ CREATE TABLE Fill (
   DateFilled   DATETIME,
   QtyDispensed INT,
   Stage        VARCHAR(20) NOT NULL DEFAULT 'Printed',
-  FOREIGN KEY (RxID)   REFERENCES Prescription(RxID),
+  FOREIGN KEY (RxID)    REFERENCES Prescription(RxID),
   FOREIGN KEY (StaffID) REFERENCES Staff(StaffID)
 );
 
@@ -118,19 +119,22 @@ CREATE TABLE Billing (
   FOREIGN KEY (RxID)      REFERENCES Prescription(RxID)
 );
 
--- 11) INVENTORY (Store + Drug)
+-- 11) INVENTORY (Store + Drug)  *** UPDATED ***
 CREATE TABLE Inventory (
-  StoreID  INT,
-  DrugID   INT,
-  StockQty INT DEFAULT 0,
+  StoreID   INT,
+  DrugID    INT,
+  StockQty  INT DEFAULT 0,
   ExpiresOn DATE,
+  UnitPrice DECIMAL(10,2),      -- <--- NEW COLUMN
   PRIMARY KEY (StoreID, DrugID),
   FOREIGN KEY (StoreID) REFERENCES Store(StoreID),
   FOREIGN KEY (DrugID)  REFERENCES Drug(DrugID)
 );
 
+-- =====================
+-- SEED DATA
+-- =====================
 
---  SEED DATA
 -- INSURANCE PLANS
 INSERT INTO Insurance (InsuranceID, Provider, Plan, Deductible, Notes) VALUES
   (1234, 'Blue Cross Blue Shield', 'Bronze PPO', 1500.00, 'Basic coverage plan.'),
@@ -142,7 +146,6 @@ INSERT INTO Insurance (InsuranceID, Provider, Plan, Deductible, Notes) VALUES
   (1240, 'Cash / Self-Pay',        'Cash Pay',        0.00, 'No insurance / self pay.'),
   (1241, 'Blue Cross Blue Shield', 'Silver PPO',   500.00, 'Mid-level coverage.');
 
--- Make future auto-increment IDs nice & high
 ALTER TABLE Insurance AUTO_INCREMENT = 2000;
 
 -- PRESCRIBERS
@@ -160,7 +163,7 @@ INSERT INTO Prescriber (Name, LicenseNo, Specialty) VALUES
   ('Dr. Natalie Clark',  'LIC667788', 'Otolaryngology'),
   ('Dr. Henry Walker',   'LIC778899', 'Urgent Care');
 
--- DRUGS (15 common meds)
+-- DRUGS
 INSERT INTO Drug (NDC, Name, Strength, Form) VALUES
   ('123456789012', 'Atorvastatin',        '10mg',   'Tablet'),
   ('234567890123', 'Lisinopril',          '20mg',   'Tablet'),
@@ -189,54 +192,53 @@ INSERT INTO Store (Name, Address) VALUES
   ('PharmaFulfill West',     '456 West Ave, Nashville, TN 37203'),
   ('PharmaFulfill East',     '789 East Blvd, Nashville, TN 37204');
 
--- INVENTORY – Store 1
-INSERT INTO Inventory (StoreID, DrugID, StockQty, ExpiresOn) VALUES
-  (1,  1, 450, '2026-12-31'), -- Atorvastatin 10mg
-  (1,  2, 180, '2026-11-30'), -- Lisinopril 20mg
-  (1,  3, 320, '2026-10-31'), -- Metformin 500mg
-  (1,  4, 200, '2026-09-30'), -- Amlodipine 5mg
-  (1,  5, 260, '2026-08-31'), -- Omeprazole 20mg
-  (1,  6, 190, '2026-12-15'), -- Simvastatin 20mg
-  (1,  7, 210, '2026-11-15'), -- Losartan 50mg
-  (1,  8, 150, '2026-10-15'), -- Levothyroxine 75mcg
-  (1,  9, 140, '2026-09-15'), -- Hydrochlorothiazide 25mg
-  (1, 10, 120, '2026-08-15'), -- Gabapentin 300mg
-  (1, 11, 130, '2026-12-01'), -- Sertraline 50mg
-  (1, 12, 110, '2026-11-01'), -- Escitalopram 10mg
-  (1, 13, 100, '2026-10-01'), -- Montelukast 10mg
-  (1, 14, 160, '2026-09-01'), -- Cetirizine 10mg
-  (1, 15, 140, '2026-08-01'), -- Fluoxetine 20mg
-  (1, 16, 170, '2026-12-20'), -- Pantoprazole 40mg
-  (1, 17,  90, '2026-11-20'), -- Meloxicam 15mg
-  (1, 18,  80, '2026-10-20'), -- Prednisone 10mg
-  (1, 19,  75, '2026-09-20'), -- Albuterol 90mcg
-  (1, 20, 130, '2026-08-20'); -- Amoxicillin 500mg
+-- INVENTORY – Store 1 (with UnitPrice)
+INSERT INTO Inventory (StoreID, DrugID, StockQty, ExpiresOn, UnitPrice) VALUES
+  (1,  1, 450, '2026-12-31', 12.50),
+  (1,  2, 180, '2026-11-30', 10.00),
+  (1,  3, 320, '2026-10-31',  8.75),
+  (1,  4, 200, '2026-09-30',  9.25),
+  (1,  5, 260, '2026-08-31', 11.00),
+  (1,  6, 190, '2026-12-15', 13.00),
+  (1,  7, 210, '2026-11-15', 14.50),
+  (1,  8, 150, '2026-10-15', 15.00),
+  (1,  9, 140, '2026-09-15',  7.75),
+  (1, 10, 120, '2026-08-15', 16.25),
+  (1, 11, 130, '2026-12-01', 10.50),
+  (1, 12, 110, '2026-11-01', 10.75),
+  (1, 13, 100, '2026-10-01',  9.90),
+  (1, 14, 160, '2026-09-01',  6.50),
+  (1, 15, 140, '2026-08-01', 11.20),
+  (1, 16, 170, '2026-12-20', 14.75),
+  (1, 17,  90, '2026-11-20', 13.40),
+  (1, 18,  80, '2026-10-20',  9.60),
+  (1, 19,  75, '2026-09-20', 22.00),
+  (1, 20, 130, '2026-08-20', 18.25);
 
 -- INVENTORY – Store 2
-INSERT INTO Inventory (StoreID, DrugID, StockQty, ExpiresOn) VALUES
-  (2,  1, 220, '2026-11-30'),
-  (2,  2, 160, '2026-10-31'),
-  (2,  3, 200, '2026-09-30'),
-  (2,  4, 150, '2026-08-31'),
-  (2,  5, 180, '2026-12-31'),
-  (2,  6, 140, '2026-11-15'),
-  (2,  7, 150, '2026-10-15'),
-  (2,  8, 120, '2026-09-15'),
-  (2,  9, 110, '2026-08-15'),
-  (2, 10,  90, '2026-12-10'),
-  (2, 11, 100, '2026-11-10'),
-  (2, 16, 130, '2026-10-10');
+INSERT INTO Inventory (StoreID, DrugID, StockQty, ExpiresOn, UnitPrice) VALUES
+  (2,  1, 220, '2026-11-30', 12.75),
+  (2,  2, 160, '2026-10-31', 10.25),
+  (2,  3, 200, '2026-09-30',  9.10),
+  (2,  4, 150, '2026-08-31',  9.50),
+  (2,  5, 180, '2026-12-31', 11.25),
+  (2,  6, 140, '2026-11-15', 13.25),
+  (2,  7, 150, '2026-10-15', 14.75),
+  (2,  8, 120, '2026-09-15', 15.25),
+  (2,  9, 110, '2026-08-15',  8.00),
+  (2, 10,  90, '2026-12-10', 16.50),
+  (2, 11, 100, '2026-11-10', 10.75),
+  (2, 16, 130, '2026-10-10', 14.25);
 
 -- INVENTORY – Store 3
-INSERT INTO Inventory (StoreID, DrugID, StockQty, ExpiresOn) VALUES
-  (3,  1, 150, '2026-10-31'),
-  (3,  3, 170, '2026-09-30'),
-  (3,  5, 160, '2026-12-31'),
-  (3,  8, 100, '2026-11-30'),
-  (3, 10,  80, '2026-10-31'),
-  (3, 14, 120, '2026-09-30'),
-  (3, 15, 100, '2026-08-31'),
-  (3, 18,  70, '2026-12-15'),
-  (3, 19,  60, '2026-11-15'),
-  (3, 20,  90, '2026-10-15');
-
+INSERT INTO Inventory (StoreID, DrugID, StockQty, ExpiresOn, UnitPrice) VALUES
+  (3,  1, 150, '2026-10-31', 12.90),
+  (3,  3, 170, '2026-09-30',  9.50),
+  (3,  5, 160, '2026-12-31', 11.50),
+  (3,  8, 100, '2026-11-30', 15.50),
+  (3, 10,  80, '2026-10-31', 16.75),
+  (3, 14, 120, '2026-09-30',  6.75),
+  (3, 15, 100, '2026-08-31', 11.40),
+  (3, 18,  70, '2026-12-15',  9.90),
+  (3, 19,  60, '2026-11-15', 22.50),
+  (3, 20,  90, '2026-10-15', 18.75);
