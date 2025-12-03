@@ -5,6 +5,7 @@ import bcrypt
 import secrets
 from datetime import datetime, date, timedelta
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
+from decimal import Decimal, InvalidOperation
 from sqlalchemy import and_, or_, func
 from typing import Optional
 from io import BytesIO
@@ -44,6 +45,7 @@ def send_email(to_address: str, subject: str, body: str) -> bool:
         server.send_message(msg)
     return True
 
+
 # Allow React dev servers to call this API
 CORS(app, supports_credentials=True, origins=[
     "http://localhost:3000",
@@ -56,7 +58,7 @@ app.secret_key = secrets.token_hex(16)
 
 # DATABASE CONFIG (LOCAL MYSQL WORKBENCH)
 app.config["SQLALCHEMY_DATABASE_URI"] = (
-    "mysql+pymysql://root:yourpassword@localhost/pharmafulfill_database"
+    "mysql+pymysql://root:khual@localhost/pharmafulfill_database"
 )
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
@@ -67,6 +69,7 @@ serializer = URLSafeTimedSerializer(app.secret_key)
 
 # Default store used for inventory deductions during verification
 DEFAULT_STORE_ID = 1
+
 
 # MODELS (MAPPED TO YOUR MYSQL SCHEMA)
 class Insurance(db.Model):
@@ -122,6 +125,7 @@ class Inventory(db.Model):
     DrugID = db.Column(db.Integer, db.ForeignKey("Drug.DrugID"), primary_key=True)
     StockQty = db.Column(db.Integer, default=0)
     ExpiresOn = db.Column(db.Date)
+    UnitPrice = db.Column(db.Numeric(10, 2))
 
 
 class Staff(db.Model):
@@ -197,6 +201,18 @@ def confirm_verification_token(token: str, max_age_seconds: int = 3600):
     except (SignatureExpired, BadSignature):
         return None
     return email
+
+def parse_decimal(value):
+    """
+    Safely parse prices coming in as '12.5', '12.50', 12.5, etc.
+    Returns Decimal or None.
+    """
+    if value is None or value == "":
+        return None
+    try:
+        return Decimal(str(value))
+    except (InvalidOperation, ValueError, TypeError):
+        return None
 
 
 def is_active_rx_status(status: Optional[str]) -> bool:
@@ -630,13 +646,14 @@ def get_refill_requests_for_patient():
 def get_inventory():
     rows = (
         db.session.query(
-            Inventory.StoreID,
-            Inventory.DrugID,
-            Drug.Name.label("DrugName"),
-            Drug.NDC,
-            Store.Name.label("StoreName"),
-            Inventory.StockQty,
-            Inventory.ExpiresOn,
+            Inventory.StoreID.label("storeId"),
+            Inventory.DrugID.label("drugId"),
+            Drug.Name.label("drugName"),
+            Drug.NDC.label("ndc"),
+            Store.Name.label("storeName"),
+            Inventory.StockQty.label("stockQty"),
+            Inventory.ExpiresOn.label("expiresOn"),
+            Inventory.UnitPrice.label("unitPrice"),
         )
         .join(Drug, Inventory.DrugID == Drug.DrugID)
         .join(Store, Inventory.StoreID == Store.StoreID)
@@ -647,17 +664,172 @@ def get_inventory():
     for row in rows:
         result.append(
             {
-                "storeId": row.StoreID,
-                "drugId": row.DrugID,
-                "name": row.DrugName,
-                "ndc": row.NDC,
-                "storeName": row.StoreName,
-                "stockQty": row.StockQty,
-                "expiresOn": row.ExpiresOn.isoformat() if row.ExpiresOn else None,
+                "storeId": row.storeId,
+                "drugId": row.drugId,
+                "name": row.drugName,
+                "ndc": row.ndc,
+                "storeName": row.storeName,
+                "stockQty": row.stockQty,
+                "expiresOn": row.expiresOn.isoformat() if row.expiresOn else None,
+                "unitPrice": float(row.unitPrice) if row.unitPrice is not None else None,
             }
         )
 
     return jsonify(result), 200
+
+
+# ADMIN: CREATE or UPSERT INVENTORY ITEM
+@app.route("/api/inventory", methods=["POST"])
+def create_inventory_item():
+    """
+    Creates or updates an inventory record for (storeId, ndc).
+    If the drug doesn't exist by NDC, it is created.
+
+    JSON body:
+    {
+      "storeId": 1,
+      "name": "Atorvastatin 10mg",
+      "ndc": "123456789012",
+      "stockQty": 100,
+      "expiresOn": "2026-12-31" | null,
+      "price": 12.5  // or "unitPrice"
+    }
+    """
+    data = request.get_json() or {}
+
+    store_id = data.get("storeId")
+    ndc = (data.get("ndc") or "").strip()
+    name = (data.get("name") or "").strip()
+    stock_qty = data.get("stockQty", 0)
+    expires_on = data.get("expiresOn")
+
+    # accept either "price" or "unitPrice" from frontend
+    unit_price_raw = data.get("price", data.get("unitPrice"))
+
+    if not store_id or not ndc or not name:
+        return jsonify({"error": "storeId, ndc, and name are required"}), 400
+
+    # Ensure store exists
+    store = Store.query.get(store_id)
+    if not store:
+        return jsonify({"error": "Store not found"}), 404
+
+    # Find or create Drug by NDC
+    drug = Drug.query.filter_by(NDC=ndc).first()
+    if not drug:
+        drug = Drug(NDC=ndc, Name=name)
+        db.session.add(drug)
+        db.session.flush()  # get DrugID
+
+    # Find or create Inventory row
+    inv = Inventory.query.filter_by(StoreID=store_id, DrugID=drug.DrugID).first()
+    if not inv:
+        inv = Inventory(StoreID=store_id, DrugID=drug.DrugID)
+        db.session.add(inv)
+
+    # Stock quantity
+    try:
+        inv.StockQty = int(stock_qty or 0)
+    except (ValueError, TypeError):
+        inv.StockQty = 0
+
+    # Expiry date
+    if expires_on:
+        try:
+            inv.ExpiresOn = datetime.strptime(expires_on, "%Y-%m-%d").date()
+        except ValueError:
+            inv.ExpiresOn = None
+    else:
+        inv.ExpiresOn = None
+
+    # Price (store as Decimal in UnitPrice)
+    inv.UnitPrice = parse_decimal(unit_price_raw)
+
+    db.session.commit()
+
+    return jsonify({
+        "storeId": inv.StoreID,
+        "drugId": inv.DrugID,
+        "name": drug.Name,
+        "ndc": drug.NDC,
+        "storeName": store.Name,
+        "stockQty": inv.StockQty,
+        "expiresOn": inv.ExpiresOn.isoformat() if inv.ExpiresOn else None,
+        "unitPrice": float(inv.UnitPrice) if inv.UnitPrice is not None else None,
+    }), 201
+
+
+# ADMIN: UPDATE INVENTORY ITEM
+@app.route("/api/inventory/<int:store_id>/<int:drug_id>", methods=["PUT"])
+def update_inventory_item(store_id, drug_id):
+    """
+    Update an existing inventory record.
+    JSON body can include:
+    {
+      "name": "...",
+      "ndc": "...",
+      "stockQty": 120,
+      "expiresOn": "2026-12-31" | "",
+      "price": 15.0  // or "unitPrice"
+    }
+    """
+    data = request.get_json() or {}
+    inv = Inventory.query.filter_by(StoreID=store_id, DrugID=drug_id).first()
+    if not inv:
+        return jsonify({"error": "Inventory record not found"}), 404
+
+    drug = Drug.query.get(drug_id)
+    if not drug:
+        return jsonify({"error": "Drug not found"}), 404
+
+    name = (data.get("name") or "").strip()
+    ndc = (data.get("ndc") or "").strip()
+
+    if name:
+        drug.Name = name
+    if ndc:
+        drug.NDC = ndc
+
+    stock_qty = data.get("stockQty")
+    if stock_qty is not None:
+        try:
+            inv.StockQty = int(stock_qty)
+        except (ValueError, TypeError):
+            pass
+
+    expires_on = data.get("expiresOn")
+    if expires_on is not None:
+        if expires_on == "":
+            inv.ExpiresOn = None
+        else:
+            try:
+                inv.ExpiresOn = datetime.strptime(expires_on, "%Y-%m-%d").date()
+            except ValueError:
+                pass
+
+    # accept either "price" or "unitPrice"
+    unit_price_raw = data.get("price", data.get("unitPrice"))
+    if unit_price_raw is not None:
+        inv.UnitPrice = parse_decimal(unit_price_raw)
+
+    db.session.commit()
+
+    return jsonify({
+        "success": True
+    }), 200
+
+
+# ADMIN: DELETE INVENTORY ITEM
+@app.route("/api/inventory/<int:store_id>/<int:drug_id>", methods=["DELETE"])
+def delete_inventory_item(store_id, drug_id):
+    inv = Inventory.query.filter_by(StoreID=store_id, DrugID=drug_id).first()
+    if not inv:
+        return jsonify({"error": "Inventory record not found"}), 404
+
+    db.session.delete(inv)
+    db.session.commit()
+
+    return jsonify({"success": True}), 200
 
 
 # ADMIN: USER LIST FOR DASHBOARD
@@ -2016,6 +2188,7 @@ def export_pharmacist_report():
                 Drug.NDC,
                 Inventory.StockQty,
                 Inventory.ExpiresOn,
+                Inventory.UnitPrice,
             )
             .join(Inventory, Inventory.DrugID == Drug.DrugID)
             .order_by(Drug.Name.asc())
@@ -2023,7 +2196,8 @@ def export_pharmacist_report():
         )
 
         for row in rows:
-            line = f"{row.DrugName} (NDC: {row.NDC})  - Stock: {row.StockQty}"
+            price_str = f"${float(row.UnitPrice):.2f}" if row.UnitPrice is not None else "N/A"
+            line = f"{row.DrugName} (NDC: {row.NDC})  - Stock: {row.StockQty}  Price: {price_str}"
             if row.ExpiresOn:
                 line += f"  Expires: {row.ExpiresOn.isoformat()}"
             p.drawString(50, y, line)
@@ -2199,6 +2373,121 @@ def get_patient_orders():
         )
 
     return jsonify({"orders": orders}), 200
+
+
+@app.route("/api/metrics", methods=["GET"])
+def get_metrics():
+    """
+    High-level admin KPIs for the AdminDashboard.
+    Shape matches the Metrics interface in the frontend.
+    """
+    # Revenue = sum of Billing.Amount
+    revenue_val = (
+        db.session.query(func.coalesce(func.sum(Billing.Amount), 0))
+        .scalar()
+    )
+    revenue = float(revenue_val or 0.0)
+
+    # Orders = total fills
+    orders = db.session.query(func.count(Fill.FillID)).scalar() or 0
+
+    # Users = patients + staff
+    total_patients = db.session.query(func.count(Patient.PatientID)).scalar() or 0
+    total_staff = db.session.query(func.count(Staff.StaffID)).scalar() or 0
+    users = int(total_patients + total_staff)
+
+    # Alerts = low-stock inventory (e.g., < 50 units)
+    low_stock_count = (
+        db.session.query(func.count(Inventory.DrugID))
+        .filter(Inventory.StockQty < 50)
+        .scalar()
+        or 0
+    )
+
+    # For now, fake some growth / new user numbers so the UI has something to show
+    metrics = {
+        "revenue": revenue,
+        "revenueGrowth": 12.5,   # placeholder %
+        "orders": int(orders),
+        "ordersGrowth": 8.2,     # placeholder %
+        "users": users,
+        "newUsers": 23,          # placeholder count
+        "alerts": int(low_stock_count),
+    }
+
+    return jsonify(metrics), 200
+
+
+@app.route("/api/pending-actions", methods=["GET"])
+def get_pending_actions():
+    """
+    Returns a list of pending admin actions.
+    Matches PendingAction[] in the frontend.
+    """
+    # Count low-stock items (StockQty < 50)
+    low_stock_count = (
+        db.session.query(func.count(Inventory.DrugID))
+        .filter(Inventory.StockQty < 50)
+        .scalar()
+        or 0
+    )
+
+    actions = []
+
+    if low_stock_count > 0:
+        actions.append({
+            "id": 1,
+            "type": "inventory",
+            "title": "Low-stock medications",
+            "count": int(low_stock_count),
+            "priority": "medium",
+        })
+
+    # You can add more actions later (e.g., unverified patients, pending staff, etc.)
+
+    return jsonify(actions), 200
+
+
+@app.route("/api/activity", methods=["GET"])
+def get_activity():
+    """
+    Returns recent system activity.
+    Matches ActivityItem[] in the frontend.
+    """
+    now = datetime.utcnow()
+
+    activity = [
+        {
+            "id": 1,
+            "type": "user",
+            "action": "New user registered",
+            "description": "New patient account created",
+            "timestamp": now.isoformat(),
+        },
+        {
+            "id": 2,
+            "type": "prescription",
+            "action": "Prescription filled",
+            "description": "Rx filled and marked Ready",
+            "timestamp": (now.replace(minute=max(0, now.minute - 10))).isoformat(),
+        },
+        {
+            "id": 3,
+            "type": "inventory",
+            "action": "Stock updated",
+            "description": "Inventory restocked for key chronic meds",
+            "timestamp": (now.replace(minute=max(0, now.minute - 30))).isoformat(),
+        },
+        {
+            "id": 4,
+            "type": "system",
+            "action": "System settings updated",
+            "description": "Admin changed notification preferences",
+            "timestamp": (now.replace(hour=max(0, now.hour - 2))).isoformat(),
+        },
+    ]
+
+    return jsonify(activity), 200
 
 
 # APP ENTRY POINT
