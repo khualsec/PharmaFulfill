@@ -1,9 +1,9 @@
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Switch } from './ui/switch';
-import { Settings, Store, Bell } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import { Switch } from "./ui/switch";
+import { Store, Bell } from "lucide-react";
 
 export default function AdminSettings() {
   return (
@@ -16,7 +16,9 @@ export default function AdminSettings() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left side: store + notifications */}
         <div className="lg:col-span-2 space-y-6">
+          {/* Store configuration */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -38,7 +40,10 @@ export default function AdminSettings() {
 
               <div className="space-y-2">
                 <Label htmlFor="mainAddress">Main Address</Label>
-                <Input id="mainAddress" defaultValue="123 Main St, Nashville, TN 37201" />
+                <Input
+                  id="mainAddress"
+                  defaultValue="123 Main St, Nashville, TN 37201"
+                />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -48,7 +53,11 @@ export default function AdminSettings() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="mainEmail">Main Email</Label>
-                  <Input id="mainEmail" type="email" defaultValue="info@pharmafulfill.com" />
+                  <Input
+                    id="mainEmail"
+                    type="email"
+                    defaultValue="info@pharmafulfill.com"
+                  />
                 </div>
               </div>
 
@@ -56,6 +65,7 @@ export default function AdminSettings() {
             </CardContent>
           </Card>
 
+          {/* Notification settings */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -109,7 +119,9 @@ export default function AdminSettings() {
           </Card>
         </div>
 
+        {/* Right side: info + quick actions */}
         <div className="space-y-6">
+          {/* System info */}
           <Card>
             <CardHeader>
               <CardTitle>System Information</CardTitle>
@@ -134,6 +146,7 @@ export default function AdminSettings() {
             </CardContent>
           </Card>
 
+          {/* Quick actions */}
           <Card>
             <CardHeader>
               <CardTitle>Quick Actions</CardTitle>
@@ -154,13 +167,15 @@ export default function AdminSettings() {
             </CardContent>
           </Card>
 
+          {/* Maintenance mode */}
           <Card>
             <CardHeader>
               <CardTitle>Maintenance Mode</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                Enable maintenance mode to prevent user access during system updates
+                Enable maintenance mode to prevent user access during system
+                updates
               </p>
               <div className="flex items-center justify-between">
                 <Label>Maintenance Mode</Label>
