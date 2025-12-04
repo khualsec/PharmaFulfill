@@ -58,8 +58,8 @@ If sucessful, you should see:
 
 Open new terminal:
 ```bash
-   npm install
-   npm run dev
+   $npm install
+   $npm run dev
 ```
 You should then see a URL like:
 http://localhost:5173
