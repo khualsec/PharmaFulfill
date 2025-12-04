@@ -47,17 +47,19 @@ It is built with:
    pip install flask flask-cors flask-sqlalchemy pymysql bcrypt python-dotenv reportlab cryptography
 
 6. Run Flask API:
-   ```bash
+```bash
   python connect.py
+```
 
 If sucessful, you should see:
     - Running on http://127.0.0.1:5000
 
 Open new terminal:
-   ```bash
+```bash
    npm install
    npm run dev
-
+```
 You should then see a URL like:
 http://localhost:5173
+
 
