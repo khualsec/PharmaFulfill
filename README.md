@@ -52,10 +52,9 @@ It is built with:
    ```bash
    python connect.py
    ```
-
   If sucessful, you should see: 
   (`Running on http://127.0.0.1:5000`)
-  **Open new terminal:**
+7. Open new terminal:
   ```bash
      >npm install
      >npm run dev
