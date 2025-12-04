@@ -53,8 +53,8 @@ It is built with:
    python connect.py
    ```
 
-If sucessful, you should see:
-    - Running on http://127.0.0.1:5000
+If sucessful, you should see: 
+(`Running on http://127.0.0.1:5000`)
 
 Open new terminal:
 ```bash
@@ -62,6 +62,6 @@ Open new terminal:
    >npm run dev
 ```
 You should then see a URL like:
-http://localhost:5173
+(`http://localhost:5173`)
 
 
