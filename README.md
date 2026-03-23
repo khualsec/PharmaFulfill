@@ -1,66 +1,64 @@
 # 💊 PharmaFulfill
 
-PharmaFulfill is a **full-stack pharmacy management system** that models how a modern retail pharmacy could manage **patients, prescriptions, refills, inventory, and staff workflows** across multiple roles (Patient, Tech, Pharmacist, Admin).
+A full-stack pharmacy management system that models how a modern retail pharmacy manages patients, prescriptions, refills, inventory, and staff workflows across multiple user roles.
 
-It is built with:
+## 👥 Roles
 
-- **Backend:** Python + Flask + MySQL  
-- **Frontend:** React + TypeScript + ShadCN UI  
-- **Database:** MySQL with a normalized schema (patients, staff, prescriptions, fills, refills, inventory, billing, etc.)
+| Role | Description |
+|---|---|
+| Patient | View prescriptions, request refills |
+| Pharmacy Technician | Process fills and refills, manage inventory |
+| Pharmacist | Review and approve prescriptions |
+| Admin | Manage staff, system oversight |
 
-### 3. Requirements (Flask API)
+## 🛠️ Tech Stack
 
-- **Framework:** Flask (Python)
-- **Database access:** `mysql-connector-python`
-- **CORS:** `Flask-CORS`
-- **Security:**
-  - bcrypt hashing for all stored passwords.
-- **Email Service:**
-  - smtplib + TLS + Gmail app password
-  - datetime, json, os
+| Layer | Technology |
+|---|---|
+| Frontend | React + TypeScript, Vite, ShadCN UI, lucide-react, Sonner |
+| Backend | Python, Flask, Flask-CORS, mysql-connector-python |
+| Database | MySQL — normalized schema (patients, staff, prescriptions, fills, refills, inventory, billing) |
+| Security | bcrypt password hashing, TLS email via smtplib + Gmail |
+| Dev Tools | VS Code, MySQL Workbench, Node.js + npm, Git |
 
-### 4. Frontend Requirements (React + TS)
+## 🚀 Getting Started
 
-- **Framework:** React + TypeScript
-- **Build tool:** Vite
-- **UI Library:** ShadCN UI
-- **Icons:** lucide-react
-- **Notifications:** sonner (toasts)
+### Prerequisites
 
-### Database & Dev Tools
+Download and install the following before running the project:
 
-- MySQL Server
-- MySQL Workbench
-- VS Code
-- Node.js + npm
-- Windows PowerShell / CMD
+- [MySQL + MySQL Workbench](https://dev.mysql.com/downloads/)
+- [Python](https://www.python.org/downloads/)
+- [Node.js + npm](https://nodejs.org/)
 
-## 🚀 Running the Project
+### 1. Set up the database
 
-1. Download MySQL + MySQL Workbench from the official website
-2. Download Python from the official website
-3. Download Node.js from the official website
-4. Start MySQL server and create the database using the PharmaFulfill.sql provided.
-5. Installing dependencies from your project folder terminal:
+Start your MySQL server and import `PharmaFulfill.sql` using MySQL Workbench to create and populate the database.
 
-   ```bash
-   
-   pip install flask flask-cors flask-sqlalchemy pymysql bcrypt python-dotenv reportlab cryptography
-   ```
+### 2. Start the Flask API
 
-6. Run Flask API:
-   ```bash
-   python connect.py
-   ```
-  If sucessful, you should see: 
-  (`Running on http://127.0.0.1:5000`)
+From your project folder, install dependencies and run the backend:
 
-7. Open new terminal:
-  ```bash
-     >npm install
-     >npm run dev
-  ```
-You should then see a URL like:
-(`http://localhost:5173`)
+```bash
+pip install flask flask-cors flask-sqlalchemy pymysql bcrypt python-dotenv reportlab cryptography
+python connect.py
+```
 
+If successful, you should see:
+```
+Running on http://127.0.0.1:5000
+```
 
+### 3. Start the frontend
+
+Open a new terminal and run:
+
+```bash
+npm install
+npm run dev
+```
+
+You should see a local URL like:
+```
+http://localhost:5173
+```
